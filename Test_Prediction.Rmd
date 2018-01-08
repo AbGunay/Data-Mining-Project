@@ -1,0 +1,158 @@
+---
+title: "Test Prediction"
+output: html_notebook
+---
+
+
+```{r}
+library(ggplot2)
+train <- read.csv("train_users_2.csv")
+test <- read.csv("test_users.csv")
+
+#the distribution of the country_destination label
+ggplot(data=train, aes(train$country_destination)) + geom_bar(fill = "#387699") + xlab("Countries")
+
+# date_account_created column is split to year, mounth and day columns  
+date_account_created_train <- as.numeric(format(as.Date(train$date_account_created), format = "%Y"))
+date_account_created_test <- as.numeric(format(as.Date(test$date_account_created), format = "%Y"))
+train$month <- as.numeric(format(as.Date(train$date_account_created), format = "%m"))
+train$day <-  as.numeric(format(as.Date(train$date_account_created), format = "%d"))
+train <- subset(train, select = -c(id, date_account_created, date_first_booking))
+summary(train)
+test$month <- as.numeric(format(as.Date(test$date_account_created), format = "%m"))
+test$day <-  as.numeric(format(as.Date(test$date_account_created), format = "%d"))
+test <- subset(test, select = -c( date_account_created, date_first_booking))
+summary(test)
+
+# some values in the age column are substitued by mean value as they do not make sense
+train$age[train$age > 1000 & is.na(train$age) == FALSE] <- 2015 - train$age[train$age > 1000 & is.na(train$age) == FALSE]
+train$age[train$age < 12 | train$age > 96] <- mean(train$age)
+test$age[test$age > 1000 & is.na(test$age) == FALSE] <- 2015 - test$age[test$age > 1000 & is.na(test$age) == FALSE]
+test$age[test$age < 12 | test$age > 96] <- mean(test$age)
+table(train$age)
+table(test$age)
+
+table(test$signup_method)
+# as "weibo" is not in the signup_method column of the traing data, it is substitued by "basic" value, which is the most repetead
+test$signup_method[test$signup_method == "weibo"] <-  "basic"
+table(test$language)
+# as "-unknown-" is not in the language column of the traing data, it is substitued by "en" value, which is the most repetead
+test$language[test$language == "-unknown-"] <- "en"
+table(test$first_browser)
+
+# as "IBrowse", "UC Browser", "Nintendo Browser" are not in the first_browser column of the traing data, it is substitued by "Chrome" value, which is the most repetead
+test$first_browser[test$first_browser == "IBrowse"] <- "Chrome"
+test$first_browser[test$first_browser == "UC Browser"] <- "Chrome"
+test$first_browser[test$first_browser == "Nintendo Browser"] <- "Chrome"
+# empty values are substitued by missing values in first_affiliate_tracked column
+train$first_affiliate_tracked[train$first_affiliate_tracked == ""] <- NA
+test$first_affiliate_tracked[test$first_affiliate_tracked == ""] <- NA
+```
+
+
+
+```{r}
+library(ROSE)
+#the traing data is balanced using the sampling method
+set1 <- train[train$country_destination == 'AU' | train$country_destination == 'other',]
+balanced_set1 <- ovun.sample(country_destination~ ., data = set1 ,N= 50000, method = 'both')$data
+table(balanced_set1$country_destination)
+
+set2 <- train[train$country_destination == 'CA' | train$country_destination == 'other',]
+balanced_set2 <- ovun.sample(country_destination~ ., data = set2 ,N = 50000, method = 'both')$data
+summary(balanced_set2$country_destination)
+
+set3 <- train[train$country_destination == 'DE' | train$country_destination == 'other',]
+balanced_set3 <- ovun.sample(country_destination~ ., data = set3 ,N = 50000, method = 'both')$data
+summary(balanced_set3$country_destination)
+
+set4 <- train[train$country_destination == 'ES' | train$country_destination == 'other',]
+balanced_set4 <- ovun.sample(country_destination~ ., data = set4 ,N = 50000, method = 'both')$data
+summary(balanced_set4$country_destination)
+
+set5 <- train[train$country_destination == 'FR' | train$country_destination == 'other',]
+balanced_set5 <- ovun.sample(country_destination~ ., data = set5 ,N = 50000, method = 'both')$data
+summary(balanced_set5$country_destination)
+
+set6 <- train[train$country_destination == "GB" | train$country_destination == "other",]
+balanced_set6 <- ovun.sample(country_destination~ ., data = set6, N = 50000, method = 'both')$data
+summary(balanced_set6$country_destination)
+
+set7 <- train[train$country_destination == "IT" | train$country_destination == "other",]
+balanced_set7 <- ovun.sample(country_destination~ ., data = set7, N = 50000, method = 'both')$data
+summary(balanced_set7$country_destination)
+
+set8 <- train[train$country_destination == "NDF" | train$country_destination == "other",]
+balanced_set8 <- ovun.sample(country_destination~ ., data = set8, N = 50000, method = 'both')$data
+summary(balanced_set8$country_destination)
+
+set9 <- train[train$country_destination == "NL" | train$country_destination == "other",]
+balanced_set9 <- ovun.sample(country_destination~ ., data = set9, N = 50000, method = 'both')$data
+summary(balanced_set9$country_destination)
+
+set10 <- train[train$country_destination == "PT" | train$country_destination == "other",]
+balanced_set10 <- ovun.sample(country_destination~ ., data = set10, N = 50000, method = 'both')$data
+summary(balanced_set10$country_destination)
+
+set11 <- train[train$country_destination == "US" | train$country_destination == "other",]
+balanced_set11 <- ovun.sample(country_destination~ ., data = set11, N = 50000, method = 'both')$data
+summary(balanced_set11$country_destination)
+
+train <- balanced_set1 
+train <- rbind(train, balanced_set2[balanced_set2$country_destination == 'CA',])
+train <- rbind(train, balanced_set3[balanced_set3$country_destination == 'DE',])
+train <- rbind(train, balanced_set4[balanced_set4$country_destination == 'ES',])
+train <- rbind(train, balanced_set5[balanced_set5$country_destination == 'FR',])
+train <- rbind(train, balanced_set6[balanced_set6$country_destination == 'GB',])
+train <- rbind(train, balanced_set7[balanced_set7$country_destination == 'IT',])
+train <- rbind(train, balanced_set8[balanced_set8$country_destination == 'NDF',])
+train <- rbind(train, balanced_set9[balanced_set9$country_destination == 'NL',])
+train <- rbind(train, balanced_set10[balanced_set10$country_destination == 'PT',])
+train <- rbind(train, balanced_set11[balanced_set11$country_destination == 'US',])
+table(train$country_destination)
+```
+
+
+
+```{r}
+library(caret)
+
+ctrl <- trainControl(method = "none", number = 1, repeats = 1, classProbs = TRUE)
+rf_fit <- train(make.names(country_destination)~., data = train, method = 'rf', trControl = ctrl)
+
+# write the modified test data to Test_modif1.csv to impute using Amelia
+write.csv(test, "Test_modif1.csv")
+library("Amelia")
+AmeliaView()
+
+# read the imputed test data to predict the country_destination
+test <- read.csv("Test_modif1-imp1.csv")
+#probability of the model trained on all train data
+prob <- predict(rf_fit, newdata = test, type = 'prob')
+
+```
+
+
+```{r}
+#Extracting of the most probable 5 countries
+library("tidyr")
+
+new <- cbind(test,prob)
+new <- subset(new, select = c(id, AU, CA, DE, ES, FR, GB, IT, NDF, NL, other, PT, US))
+tab<- data.frame()
+
+for(i in 1:nrow(new)){
+  id <- new[i,1]
+  
+  countries <- names(data.frame(sort(as.vector(new[i,2:ncol(new)]), decreasing = TRUE)[1:5]))
+  
+  for(j in 1:5){
+    tab <- rbind(tab, data.frame(id = id, country = countries[j]))
+  }
+  
+}
+
+write.csv(tab, "result.csv")
+```
+
+
