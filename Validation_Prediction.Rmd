@@ -110,7 +110,6 @@ table(train$country_destination)
 
 library(caret)
 
-
 #Training
 ctrl <- trainControl(method = "none", number = 1, repeats = 1, classProbs = TRUE)
 rf_fit <- train(make.names(country_destination)~., data = train, method = 'rf', trControl = ctrl)
